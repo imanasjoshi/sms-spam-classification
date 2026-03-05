@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spam Classifier</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Mono:wght@300;400;500&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --bg: #0a0a0f;
+        --surface: #111118;
+        --border: #222230;
+        --accent: #e8ff47;
+        --danger: #ff4747;
+        --safe: #47ffb2;
+        --text: #e8e8f0;
+        --muted: #6a6a80;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        font-family: "DM Mono", monospace;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background-image:
+          radial-gradient(
+            ellipse 60% 50% at 20% 10%,
+            rgba(232, 255, 71, 0.05) 0%,
+            transparent 60%
+          ),
+          radial-gradient(
+            ellipse 40% 40% at 80% 90%,
+            rgba(71, 255, 178, 0.04) 0%,
+            transparent 60%
+          );
+      }
+
+      .card {
+        width: 100%;
+        max-width: 640px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: 0 0 60px rgba(0, 0, 0, 0.6);
+      }
+
+      .card-header {
+        padding: 2rem 2.5rem 1.5rem;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: baseline;
+        gap: 1rem;
+      }
+
+      .badge {
+        font-size: 0.65rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+        padding: 2px 8px;
+        border-radius: 2px;
+      }
+
+      h1 {
+        font-family: "Syne", sans-serif;
+        font-size: 1.6rem;
+        font-weight: 800;
+        color: var(--text);
+        letter-spacing: -0.02em;
+      }
+
+      .card-body {
+        padding: 2rem 2.5rem;
+      }
+
+      label {
+        display: block;
+        font-size: 0.7rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 0.75rem;
+      }
+
+      textarea {
+        width: 100%;
+        background: var(--bg);
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-family: "DM Mono", monospace;
+        font-size: 0.88rem;
+        line-height: 1.7;
+        padding: 1rem;
+        border-radius: 2px;
+        resize: vertical;
+        min-height: 140px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+
+      textarea:focus {
+        border-color: var(--accent);
+      }
+      textarea::placeholder {
+        color: var(--muted);
+      }
+
+      button {
+        margin-top: 1.25rem;
+        width: 100%;
+        background: var(--accent);
+        color: #0a0a0f;
+        font-family: "Syne", sans-serif;
+        font-size: 0.85rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        border: none;
+        padding: 0.9rem 1.5rem;
+        border-radius: 2px;
+        cursor: pointer;
+        transition:
+          opacity 0.15s,
+          transform 0.1s;
+      }
+
+      button:hover {
+        opacity: 0.88;
+      }
+      button:active {
+        transform: scale(0.99);
+      }
+      button:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      #result {
+        margin-top: 1.5rem;
+        padding: 1.25rem 1.5rem;
+        border-radius: 2px;
+        display: none;
+        animation: fadeIn 0.3s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      #result.spam {
+        background: rgba(255, 71, 71, 0.08);
+        border: 1px solid rgba(255, 71, 71, 0.35);
+      }
+
+      #result.safe {
+        background: rgba(71, 255, 178, 0.06);
+        border: 1px solid rgba(71, 255, 178, 0.3);
+      }
+
+      .result-label {
+        font-family: "Syne", sans-serif;
+        font-size: 1.2rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+      }
+
+      .result-label.spam {
+        color: var(--danger);
+      }
+      .result-label.safe {
+        color: var(--safe);
+      }
+
+      .result-sub {
+        margin-top: 0.3rem;
+        font-size: 0.75rem;
+        color: var(--muted);
+      }
+
+      .spinner {
+        display: inline-block;
+        width: 14px;
+        height: 14px;
+        border: 2px solid #0a0a0f;
+        border-top-color: transparent;
+        border-radius: 50%;
+        animation: spin 0.7s linear infinite;
+        vertical-align: middle;
+        margin-right: 6px;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="card-header">
+        <h1>Spam Classifier</h1>
+        <span class="badge">ML Powered</span>
+      </div>
+      <div class="card-body">
+        <label for="message">Message Input</label>
+        <textarea
+          id="message"
+          placeholder="Paste your email or SMS message here..."
+        ></textarea>
+        <button id="btn" onclick="classify()">Analyse Message</button>
+        <div id="result">
+          <div class="result-label" id="result-label"></div>
+          <div class="result-sub" id="result-sub"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      async function classify() {
+        const msg = document.getElementById("message").value.trim();
+        if (!msg) return;
+
+        const btn = document.getElementById("btn");
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner"></span>Analysing...';
+
+        const resultEl = document.getElementById("result");
+        resultEl.style.display = "none";
+
+        try {
+          const res = await fetch("/predict", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message: msg }),
+          });
+          const data = await res.json();
+
+          const label = document.getElementById("result-label");
+          const sub = document.getElementById("result-sub");
+
+          if (data.result === "spam") {
+            resultEl.className = "spam";
+            label.className = "result-label spam";
+            label.textContent = "⚠ Spam Detected";
+            sub.textContent =
+              "This message was flagged as spam by the classifier.";
+          } else {
+            resultEl.className = "safe";
+            label.className = "result-label safe";
+            label.textContent = "✓ Not Spam";
+            sub.textContent = "This message appears to be legitimate.";
+          }
+
+          resultEl.style.display = "block";
+        } catch (e) {
+          alert("Error connecting to server.");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Analyse Message";
+        }
+      }
+
+      document.getElementById("message").addEventListener("keydown", (e) => {
+        if (e.ctrlKey && e.key === "Enter") classify();
+      });
+    </script>
+  </body>
+</html>
